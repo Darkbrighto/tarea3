@@ -19,6 +19,9 @@ void leer_escenarios() {
   char **campos;
   // Leer y parsear una línea del archivo CSV. La función devuelve un array de
   // strings, donde cada elemento representa un campo de la línea CSV procesada.
+
+  // comentario hugistico : parsear en este contexto significa dividir una cadena en partes
+  // separadas por un delimitador específico (en este caso, la coma).
   campos = leer_linea_csv(archivo, ','); // Lee los encabezados del CSV
 
 

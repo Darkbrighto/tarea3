@@ -1,8 +1,8 @@
-# Spotifind
+# GRAPH-QUEST
 
 ## Descripción
 
-**Spotifind** es una aplicación desarrollada en lenguaje C que permite gestionar un catálogo de canciones cargadas desde un archivo CSV. A través de una interfaz por consola, los usuarios pueden buscar canciones por género, artista o tempo, y explorar información detallada de cada una. Actualmente se está desarrollando una funcionalidad adicional para crear listas de reproducción personalizadas.
+**GRAPH** es un Videojuego de lenguaje C que permite cargar un Nivel de canciones cargadas desde un archivo CSV. A través de una interfaz por consola, Este juego consiste en recorrer un laberinto representado mediante un grafo, en el que cada nodo es un escenario con decisiones posibles y elementos coleccionables.
 
 ## Cómo compilar y ejecutar
 
@@ -21,74 +21,77 @@ Este sistema puede ejecutarse fácilmente utilizando **Visual Studio Code** junt
 2. **Abre el proyecto en Visual Studio Code**
 
    * Abre VS Code.
-   * Selecciona `Archivo > Abrir carpeta...` y elige la carpeta del proyecto. (TDAs-Br...)
+   * Selecciona `Archivo > Abrir carpeta...` y elige la carpeta del proyecto. (TAREA3...)
 
 3. **Compila el código**
 
-   * Abre el archivo `tarea2_lecturacsv.c`.
+   * Abre el archivo `tarea3_lecturacsv.c`.
    * Abre la terminal integrada (`Terminal > Nueva terminal`).
-   * Abre la carpeta TDAs-Bruno-Perez-y-Hugo-Gallardo en el Terminal
+   * Abre la carpeta TAREA3 en el Terminal
    * Ejecuta el siguiente comando para compilar el programa:
 
      ```bash
-     gcc tarea2_lecturacsv.c tdas/*c
+     gcc tarea3_lecturacsv.c tdas/*c
      ```
 
 4. **Ejecuta el programa**
 
-   * Asegúrate de que el archivo `song_dataset_.csv` esté en la misma carpeta.
+   * Asegúrate de que el archivo `graphquest.csv` esté en la misma carpeta.
    * Ejecuta el programa con:
 
      ``
-     ./a.exe
+     ./a.out
      ```
 
 ## Funcionalidades
 
 ### Funcionando correctamente:
 
-* 📂 Cargar canciones desde un archivo CSV (`song_dataset_.csv`)
-* 🎧 Buscar canciones por género
-* 👩‍🎤 Buscar canciones por artista
-* 🕒 Buscar canciones por rango de tempo (lento, moderado, rápido)
-* 📜 Mostrar información detallada de una canción
-* 📦 Uso de estructuras eficientes (`Map`, `List`) para una búsqueda optimizada
+* 📂 Cargar un nivel desde un archivo CSV (`graphquest.csv`)
+* 👩‍🎤 Poder moverte en el Grafo seleccionando opciones.
+* 🕒 Límite de tiempo, cada acción costando 1 al tiempo.
+* 📦 Mostrar información del estado actual del jugador (Inventario, habitación actual)
+* 📜 Mostrar solo lo posible y necesario (Si no puede moverse arriba, no lo mostrará como opción. )
 
 ### Problemas conocidos:
 
-* No se detectan errores de ejecución críticos hasta ahora, pero puede haber errores en la validación de entradas del usuario.
+* Si intentas cargar el juego sin leer el CSV, no hay problemas, pero, sin activar el modo debug, no podrás ver el
+mensaje de error correspondiente, por ende (falta de feedback al jugador)
+* Bajo ciertas condiciónes desconocidas, puede el programa quedarse estancado en el inicio.
 
 ### A mejorar:
 
-* Mejorar manejo de errores en búsquedas sin resultados.
-* Validación más robusta del archivo CSV.
+* Mayor feedback al jugador de lo que realmente ocurre, ya sea colocar más prints y arreglar lo de limpiar pantalla.
 
 ### Funcionalidades planeadas:
 
-* 📑 Crear listas de reproducción personalizadas
-* ➕ Agregar canciones a listas
-* 📃 Mostrar canciones dentro de una lista de reproducción
+* ➕ Uso de objetos no solo para la carga
 
 ## Formato del archivo CSV
 
-El archivo `song_dataset_.csv` debe contener, como mínimo, las siguientes columnas:
+El archivo `graphquest.csv` debe contener, como mínimo, las siguientes columnas:
 
-* `ID` (índice 0)
-* `Artistas` (índice 2, múltiples artistas separados por `;`)
-* `Álbum` (índice 3)
-* `Nombre de la canción` (índice 4)
-* `Tempo` (índice 18)
-* `Género` (índice 20)
+* `ID` (índice 1)
+* `Nombre` (índice 2 `,`)
+* `Descripción` (índice 3)
+* `Cadena en forma de lista de los items` (índice 4)
+* `Posibles movimientos` (índice 5)
 
 **Nota:** Asegúrate de que los índices y nombres de columnas coincidan exactamente con el formato del CSV esperado por el programa.
 
 ## Ejemplo de uso
 
-**Paso 1: Cargar canciones desde el archivo CSV**
+#Instrucciones y demas para abajo
+# ¿Puede el jugador tomar múltiples veces el mismo objeto en el mapa?
+# ¿Cuando el jugador es reiniciado, también se reinician los objetos en el grafo?,  ¿Si es así, como reinicias y sabes que objetos tomar del grafo?
+# ¿Reiniciar el jugador y reiniciar el nivel están funcionando?, ya que si reinicias uno debes reiniciar otro
+# Tener una copia del grafo original y reemplazar el grafo, osea tener un grafo como guardado de la partido y otro el estado intacto, ya que al reiniciar, se borraran objetos tomados y al tomarlos se borraran.
+
+**Paso 1: Cargar nivel desde el archivo CSV**
 
 ```
-Opción seleccionada: 1) Cargar canciones
-Canciones cargadas exitosamente desde song_dataset_.csv
+Opción seleccionada: 1) Cargar nivel
+nivel cargado exitosamente desde graphquest.csv
 ```
 
 **Paso 2: Buscar por artista**

@@ -63,7 +63,14 @@ typedef struct Player{
   List* items;
 } Player;
 
-
+typedef struct {
+  Player* jugador1;
+  Player* jugador2;
+  int jugador_actual; // 0 para jugador1, 1 para jugador2
+  Nodo* posicion_jugador1;
+  Nodo* posicion_jugador2;
+  int ambos_terminaron;
+} JuegoMultijugador;
 
 /*## **Menú Principal**
 
@@ -156,6 +163,15 @@ void conectar_nodos(Grafo* grafo) {
       actual->derecha = buscar_nodo_por_id(grafo, actual->id_derecha);
     actual = actual->siguiente;
   }
+}
+
+Player* crear_jugador(int numero) {
+  Player* jugador = malloc(sizeof(Player));
+  jugador->peso_total = 0;
+  jugador->puntaje_total = 0;
+  jugador->tiempo = 10;
+  jugador->items = list_create();
+  return jugador;
 }
 
 void guardar_items_originales(Grafo* grafo) {
@@ -549,6 +565,130 @@ void mostrar_estado_actual(Nodo* nodo_actual, Player* jugador) {
   }
 }
 
+void mostrar_estado_multijugador(JuegoMultijugador* juego, Nodo* nodo_actual) {
+  Player* jugador_actual = (juego->jugador_actual == 0) ? juego->jugador1 : juego->jugador2;
+  int numero_jugador = juego->jugador_actual + 1;
+  
+  printf("\n=== TURNO DEL JUGADOR %d ===\n", numero_jugador);
+  printf("Escenario: %s\n", nodo_actual->nombre);
+  printf("Descripción: %s\n", nodo_actual->descripcion);
+  
+  printf("\nÍtems disponibles en este escenario:\n");
+  if (nodo_actual->items != NULL && list_size(nodo_actual->items) > 0) {
+    int i = 1;
+    for (Item *item = list_first(nodo_actual->items); item != NULL; item = list_next(nodo_actual->items)) {
+      printf("  %d. %s (Peso: %d kg, Valor: %d pts)\n", i, item->nombre, item->peso, item->valor);
+      i++;
+    }
+  } else {
+    printf("  No hay ítems disponibles.\n");
+  }
+  
+  printf("\n=== ESTADO JUGADOR %d ===\n", numero_jugador);
+  printf("Tiempo restante: %d\n", jugador_actual->tiempo);
+  printf("Inventario:\n");
+  if (jugador_actual->items != NULL && list_size(jugador_actual->items) > 0) {
+    int i = 1;
+    for (Item *item = list_first(jugador_actual->items); item != NULL; item = list_next(jugador_actual->items)){
+      printf("  %d. %s (Peso: %d kg, Valor: %d pts)\n", i, item->nombre, item->peso, item->valor);
+      i++;
+    }
+  } else {
+    printf("  No hay ítems en el inventario.\n");
+  }
+  printf("Peso total: %d kg\n", jugador_actual->peso_total);
+  printf("Puntaje total: %d pts\n", jugador_actual->puntaje_total);
+  
+  printf("\nAcciones disponibles:\n");
+  if (nodo_actual->arriba != NULL) printf("  1. Ir Arriba\n");
+  if (nodo_actual->abajo != NULL) printf("  2. Ir Abajo\n");
+  if (nodo_actual->izquierda != NULL) printf("  3. Ir Izquierda\n");
+  if (nodo_actual->derecha != NULL) printf("  4. Ir Derecha\n");
+}
+
+// Función para mostrar resultado final del modo multijugador
+void mostrar_resultado_multijugador(JuegoMultijugador* juego) {
+  printf("\n=== RESULTADO FINAL MULTIJUGADOR ===\n");
+  
+  // Verificar si ambos llegaron al final
+  int jugador1_termino = juego->posicion_jugador1->es_final;
+  int jugador2_termino = juego->posicion_jugador2->es_final;
+  
+  if (jugador1_termino && jugador2_termino) {
+    printf("¡VICTORIA! Ambos jugadores llegaron al escenario final.\n\n");
+    
+    // Mostrar inventarios combinados
+    printf("=== INVENTARIOS FINALES ===\n");
+    printf("JUGADOR 1:\n");
+    if (juego->jugador1->items != NULL && list_size(juego->jugador1->items) > 0) {
+      for (Item *item = list_first(juego->jugador1->items); item != NULL; item = list_next(juego->jugador1->items)) {
+        printf("  - %s (Peso: %d kg, Valor: %d pts)\n", item->nombre, item->peso, item->valor);
+      }
+    } else {
+      printf("  Sin ítems\n");
+    }
+    
+    printf("\nJUGADOR 2:\n");
+    if (juego->jugador2->items != NULL && list_size(juego->jugador2->items) > 0) {
+      for (Item *item = list_first(juego->jugador2->items); item != NULL; item = list_next(juego->jugador2->items)) {
+        printf("  - %s (Peso: %d kg, Valor: %d pts)\n", item->nombre, item->peso, item->valor);
+      }
+    } else {
+      printf("  Sin ítems\n");
+    }
+    
+    int puntaje_total = juego->jugador1->puntaje_total + juego->jugador2->puntaje_total;
+    printf("\nPUNTAJE TOTAL COLABORATIVO: %d puntos\n", puntaje_total);
+    printf("Jugador 1: %d puntos | Jugador 2: %d puntos\n", 
+           juego->jugador1->puntaje_total, juego->jugador2->puntaje_total);
+  } else {
+    printf("DERROTA - No todos los jugadores llegaron al escenario final.\n");
+    printf("Jugador 1: %s\n", jugador1_termino ? "Llegó al final" : "No llegó al final");
+    printf("Jugador 2: %s\n", jugador2_termino ? "Llegó al final" : "No llegó al final");
+  }
+}
+
+// Función para reiniciar el juego multijugador
+void reiniciar_multijugador(JuegoMultijugador* juego, Grafo* grafo) {
+  // Reiniciar jugador 1
+  if (juego->jugador1->items != NULL) {
+    for (Item *item = list_first(juego->jugador1->items); item != NULL; item = list_next(juego->jugador1->items)) {
+      free(item);
+    }
+    while (list_size(juego->jugador1->items) > 0) {
+      list_popFront(juego->jugador1->items);
+    }
+  }
+  juego->jugador1->tiempo = 10;
+  juego->jugador1->peso_total = 0;
+  juego->jugador1->puntaje_total = 0;
+  
+  // Reiniciar jugador 2
+  if (juego->jugador2->items != NULL) {
+    for (Item *item = list_first(juego->jugador2->items); item != NULL; item = list_next(juego->jugador2->items)) {
+      free(item);
+    }
+    while (list_size(juego->jugador2->items) > 0) {
+      list_popFront(juego->jugador2->items);
+    }
+  }
+  juego->jugador2->tiempo = 10;
+  juego->jugador2->peso_total = 0;
+  juego->jugador2->puntaje_total = 0;
+  
+  // Restaurar posiciones iniciales
+  Nodo* nodo_inicial = buscar_nodo_por_id(grafo, 1);
+  if (nodo_inicial == NULL) {
+    nodo_inicial = grafo->nodos;
+  }
+  juego->posicion_jugador1 = nodo_inicial;
+  juego->posicion_jugador2 = nodo_inicial;
+  juego->jugador_actual = 0;
+  juego->ambos_terminaron = 0;
+  
+  restaurar_items_originales(grafo);
+  printf("Partida multijugador reiniciada. ¡Buena suerte!\n");
+}
 
 // iniciar_partida:
 // Inicia una partida en el laberinto. Muestra el estado actual del jugador y del escenario,
@@ -651,6 +791,128 @@ void iniciar_partida(Grafo *grafo)
   free(jugador);
 }
 
+void iniciar_partida_multijugador(Grafo *grafo) {
+  if (grafo->nodos == NULL) {
+    printf("No hay nodos cargados. Cargue un laberinto primero.\n");
+    return;
+  }
+  
+  // Inicializar juego multijugador
+  JuegoMultijugador* juego = malloc(sizeof(JuegoMultijugador));
+  juego->jugador1 = crear_jugador(1);
+  juego->jugador2 = crear_jugador(2);
+  juego->jugador_actual = 0;
+  juego->ambos_terminaron = 0;
+  
+  // Posiciones iniciales
+  Nodo* nodo_inicial = buscar_nodo_por_id(grafo, 1);
+  if (nodo_inicial == NULL) {
+    nodo_inicial = grafo->nodos;
+  }
+  juego->posicion_jugador1 = nodo_inicial;
+  juego->posicion_jugador2 = nodo_inicial;
+  
+  printf("=== MODO MULTIJUGADOR COLABORATIVO ===\n");
+  printf("Juego para 2 jugadores por turnos.\n");
+  printf("Objetivo: Ambos jugadores deben llegar al escenario final.\n\n");
+  
+  while (1) {
+    Player* jugador_actual = (juego->jugador_actual == 0) ? juego->jugador1 : juego->jugador2;
+    Nodo** posicion_actual = (juego->jugador_actual == 0) ? &juego->posicion_jugador1 : &juego->posicion_jugador2;
+    
+    // Verificar si ambos jugadores terminaron o se quedaron sin tiempo
+    if ((juego->posicion_jugador1->es_final && juego->posicion_jugador2->es_final) ||
+        (juego->jugador1->tiempo <= 0 && juego->jugador2->tiempo <= 0)) {
+      mostrar_resultado_multijugador(juego);
+      break;
+    }
+    
+    // Verificar si el jugador actual se quedó sin tiempo
+    if (jugador_actual->tiempo <= 0) {
+      printf("Jugador %d se quedó sin tiempo. Pasando turno...\n", juego->jugador_actual + 1);
+      juego->jugador_actual = 1 - juego->jugador_actual; // Cambiar turno
+      continue;
+    }
+    
+    mostrar_estado_multijugador(juego, *posicion_actual);
+    
+    printf("\n=== OPCIONES DEL TURNO ===\n");
+    printf("Puedes realizar hasta 2 acciones por turno:\n");
+    printf("1. Recoger Items\n");
+    printf("2. Descartar Items\n");
+    printf("3. Avanzar en una dirección\n");
+    printf("4. Reiniciar Partida\n");
+    printf("5. Salir\n");
+    printf("6. Pasar turno (terminar turno actual)\n");
+    
+    int acciones_realizadas = 0;
+    int max_acciones = 2;
+    
+    while (acciones_realizadas < max_acciones && jugador_actual->tiempo > 0) {
+      printf("\nAcción %d/%d - Seleccione una opción: ", acciones_realizadas + 1, max_acciones);
+      int opcion;
+      scanf("%d", &opcion);
+      
+      switch (opcion) {
+        case 1:
+          recoger_items(*posicion_actual, jugador_actual);
+          acciones_realizadas++;
+          break;
+        case 2:
+          descartar_items(jugador_actual);
+          acciones_realizadas++;
+          break;
+        case 3:
+          *posicion_actual = mover_jugador(*posicion_actual, jugador_actual);
+          acciones_realizadas++;
+          break;
+        case 4:
+          printf("Reiniciando partida multijugador...\n");
+          reiniciar_multijugador(juego, grafo);
+          acciones_realizadas = max_acciones; // Salir del bucle de acciones
+          break;
+        case 5:
+          printf("Saliendo del juego multijugador.\n");
+          free(juego->jugador1);
+          free(juego->jugador2);
+          free(juego);
+          return;
+        case 6:
+          printf("Pasando turno...\n");
+          acciones_realizadas = max_acciones; // Terminar turno
+          break;
+        default:
+          printf("Opción no válida. Intente de nuevo.\n");
+          break;
+      }
+      
+      if (opcion == 4) break; // Si reinicia, salir del bucle de acciones
+    }
+    
+    // Cambiar turno
+    juego->jugador_actual = 1 - juego->jugador_actual;
+  }
+  
+  // Opciones al final del juego
+  printf("\n¿Qué deseas hacer?\n");
+  printf("1. Reiniciar Partida Multijugador\n");
+  printf("2. Volver al Menú Principal\n");
+  printf("Selecciona una opción: ");
+  
+  int opcion_final;
+  scanf("%d", &opcion_final);
+  
+  if (opcion_final == 1) {
+    reiniciar_multijugador(juego, grafo);
+    iniciar_partida_multijugador(grafo); // Reiniciar recursivamente
+  }
+  
+  free(juego->jugador1);
+  free(juego->jugador2);
+  free(juego);
+}
+
+
 // inicio_juego:
 // Muestra el menú principal del juego, permite cargar el laberinto, activar el modo debug, iniciar la partida o salir del juego.
 void inicio_juego(Grafo *grafo)
@@ -665,7 +927,8 @@ void inicio_juego(Grafo *grafo)
       printf("1. Cargar Laberinto \n");
       printf("2. Activar debug \n");
       printf("3. Iniciar Partida \n");
-      printf("4. Salir \n");
+      printf("4. Iniciar Partida Multijugador \n");
+      printf("5. Salir \n");
       printf("Seleccione una opción: ");
       mostrartexto = 0;
     }
@@ -700,6 +963,17 @@ void inicio_juego(Grafo *grafo)
         break;
 
       case 4:
+        if (!cargado)
+        {
+          if (!mostrar) limpiarPantalla(); // Asegura que el mensaje se vea
+          printf("Debe cargar el laberinto primero.\n");
+          mostrartexto = 1;
+          break;
+        }
+        iniciar_partida_multijugador(grafo);
+        break;
+
+      case 5:
         printf("saliendo.\n");
         exit(0);
 

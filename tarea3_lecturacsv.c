@@ -26,14 +26,6 @@ typedef struct Nodo {
   struct Nodo* siguiente;
 } Nodo;
 
-// Grafo:
-// Un grafo representa el laberinto completo, compuesto por múltiples nodos (escenarios).
-// Cada grafo tiene una lista de nodos y un contador del total de nodos.
-typedef struct Grafo{
-  Nodo* nodos;
-  int total_nodos;
-} Grafo;
-
 // Item:
 // Un item representa un objeto que el jugador puede recoger en el laberinto.
 // Cada item tiene un nombre, un valor (puntaje) y un peso.
@@ -42,6 +34,23 @@ typedef struct Item{
   int valor;
   int peso;
 } Item;
+
+typedef struct ItemOriginal {
+  int nodo_id;
+  Item* item;
+  struct ItemOriginal* siguiente;
+} ItemOriginal;
+
+// Grafo:
+// Un grafo representa el laberinto completo, compuesto por múltiples nodos (escenarios).
+// Cada grafo tiene una lista de nodos y un contador del total de nodos.
+typedef struct Grafo{
+  Nodo* nodos;
+  int total_nodos;
+  ItemOriginal* items_originales;
+} Grafo;
+
+
 
 // Player:
 // Un jugador representa al usuario que interactúa con el laberinto.
@@ -53,6 +62,7 @@ typedef struct Player{
   int tiempo;
   List* items;
 } Player;
+
 
 
 /*## **Menú Principal**
@@ -148,6 +158,31 @@ void conectar_nodos(Grafo* grafo) {
   }
 }
 
+void guardar_items_originales(Grafo* grafo) {
+  Nodo* nodo_actual = grafo->nodos;
+  while (nodo_actual != NULL) {
+    if (nodo_actual->items != NULL) {
+      for (Item* item = list_first(nodo_actual->items); item != NULL; item = list_next(nodo_actual->items)) {
+        ItemOriginal* item_original = malloc(sizeof(ItemOriginal));
+        item_original->nodo_id = nodo_actual->id;
+        
+        // Crear copia del item
+        item_original->item = malloc(sizeof(Item));
+        strcpy(item_original->item->nombre, item->nombre);
+        item_original->item->peso = item->peso;
+        item_original->item->valor = item->valor;
+        
+        // Agregar a la lista de items originales
+        item_original->siguiente = grafo->items_originales;
+        grafo->items_originales = item_original;
+      }
+    }
+    nodo_actual = nodo_actual->siguiente;
+  }
+}
+
+
+
 // recoger_items:
 // Permite al jugador recoger items del nodo actual.
 // Muestra una lista de items disponibles y permite al jugador seleccionar cuáles recoger.
@@ -157,23 +192,33 @@ void recoger_items(Nodo* nodo_actual, Player* jugador) {
     return;
   }
   
-  printf("\n=== RECOGER ÍTEMS ===\n");
-  printf("Selecciona los ítems que deseas recoger (separados por espacios, 0 para terminar):\n");
-  
-  int i = 1;
-  for (Item *item = list_first(nodo_actual->items); item != NULL; item = list_next(nodo_actual->items)) {
-    printf("  %d. %s (Peso: %d kg, Valor: %d pts)\n", i, item->nombre, item->peso, item->valor);
-    i++;
-  }
-  
-  printf("Ingresa los números de los ítems: ");
-  int seleccion;
   int items_recogidos = 0;
   
-  while (scanf("%d", &seleccion) && seleccion != 0) {
+  while (list_size(nodo_actual->items) > 0) {
+    printf("\n=== RECOGER ÍTEMS ===\n");
+    printf("Ítems disponibles:\n");
+    
+    int i = 1;
+    for (Item *item = list_first(nodo_actual->items); item != NULL; item = list_next(nodo_actual->items)) {
+      printf("  %d. %s (Peso: %d kg, Valor: %d pts)\n", i, item->nombre, item->peso, item->valor);
+      i++;
+    }
+    
+    printf("0. Terminar de recoger ítems\n");
+    printf("Selecciona un ítem (0 para terminar): ");
+    
+    int seleccion;
+    scanf("%d", &seleccion);
+    
+    if (seleccion == 0) {
+      break;
+    }
+    
     if (seleccion >= 1 && seleccion <= list_size(nodo_actual->items)) {
       Item* item_seleccionado = NULL;
       int pos = 1;
+      
+      // Encontrar el item seleccionado
       for (Item *item = list_first(nodo_actual->items); item != NULL; item = list_next(nodo_actual->items)) {
         if (pos == seleccion) {
           item_seleccionado = item;
@@ -183,7 +228,7 @@ void recoger_items(Nodo* nodo_actual, Player* jugador) {
       }
       
       if (item_seleccionado != NULL) {
-        
+        // Crear copia para el jugador
         Item* nuevo_item = malloc(sizeof(Item));
         strcpy(nuevo_item->nombre, item_seleccionado->nombre);
         nuevo_item->peso = item_seleccionado->peso;
@@ -195,6 +240,17 @@ void recoger_items(Nodo* nodo_actual, Player* jugador) {
         
         printf("Recogiste: %s\n", nuevo_item->nombre);
         items_recogidos++;
+        
+        // Eliminar inmediatamente el item del nodo
+        Item* item_actual = list_first(nodo_actual->items);
+        while (item_actual != NULL) {
+          if (item_actual == item_seleccionado) {
+            list_popCurrent(nodo_actual->items);
+            free(item_seleccionado);
+            break;
+          }
+          item_actual = list_next(nodo_actual->items);
+        }
       }
     } else {
       printf("Selección inválida: %d\n", seleccion);
@@ -202,11 +258,12 @@ void recoger_items(Nodo* nodo_actual, Player* jugador) {
   }
   
   if (items_recogidos > 0) {
-    jugador->tiempo -= items_recogidos;; 
+    jugador->tiempo -= items_recogidos;
     printf("Se recogieron %d ítem(s). Tiempo restante: %d\n", items_recogidos, jugador->tiempo);
+  } else if (list_size(nodo_actual->items) == 0) {
+    printf("No quedan ítems para recoger en este escenario.\n");
   }
 }
-
 // descartar_items:
 // Permite al jugador descartar items de su inventario.
 // Muestra una lista de items en el inventario y permite al jugador seleccionar cuáles descartar.
@@ -268,6 +325,37 @@ void descartar_items(Player* jugador) {
     printf("Se descartaron %d ítem(s). Tiempo restante: %d\n", items_descartados, jugador->tiempo);
   }
 }
+
+void restaurar_items_originales(Grafo* grafo) {
+  // Limpiar items actuales de todos los nodos
+  Nodo* nodo_actual = grafo->nodos;
+  while (nodo_actual != NULL) {
+    if (nodo_actual->items != NULL) {
+      for (Item* item = list_first(nodo_actual->items); item != NULL; item = list_next(nodo_actual->items)) {
+        free(item);
+      }
+      list_clean(nodo_actual->items);
+    }
+    nodo_actual = nodo_actual->siguiente;
+  }
+  
+  // Restaurar items originales
+  ItemOriginal* item_original = grafo->items_originales;
+  while (item_original != NULL) {
+    Nodo* nodo = buscar_nodo_por_id(grafo, item_original->nodo_id);
+    if (nodo != NULL) {
+      // Crear nueva copia del item original
+      Item* item_restaurado = malloc(sizeof(Item));
+      strcpy(item_restaurado->nombre, item_original->item->nombre);
+      item_restaurado->peso = item_original->item->peso;
+      item_restaurado->valor = item_original->item->valor;
+      
+      list_pushBack(nodo->items, item_restaurado);
+    }
+    item_original = item_original->siguiente;
+  }
+}
+
 
 // mover_jugador:
 // Permite al jugador moverse a un nodo adyacente (arriba, abajo, izquierda, derecha).
@@ -347,7 +435,7 @@ void mostrar_victoria(Player* jugador){
 
 // mostrar_derrota:
 // Muestra un mensaje de derrota al jugador cuando se agota el tiempo.
-void mostrar_derrota(Player* jugador){
+void mostrar_derrota(Player* jugador, Grafo* grafo){
   printf("\n=== DERROTA ==\n");
   printf("Has perdido. Tiempo agotado.\n");
 }
@@ -355,7 +443,7 @@ void mostrar_derrota(Player* jugador){
 // reiniciar_jugador:
 // Reinicia el estado del jugador, eliminando todos los items recogidos, reseteando el tiempo, peso total y puntaje total.
 // Libera la memoria de los items recogidos y reinicia las variables del jugador.
-void reiniciar_jugador(Player* jugador){
+void reiniciar_jugador(Player* jugador, Grafo* grafo){
   if (jugador->items != NULL) {
     for (Item *item = list_first(jugador->items); item != NULL; item = list_next(jugador->items)) {
       free(item);
@@ -367,6 +455,7 @@ void reiniciar_jugador(Player* jugador){
   jugador->tiempo = 10;
   jugador->peso_total = 0;
   jugador->puntaje_total = 0;
+  restaurar_items_originales(grafo);
   printf("Partida reiniciada. ¡Buena suerte!\n");
 }
 
@@ -408,6 +497,7 @@ void leer_escenarios(Grafo *grafo)
     agregar_nodo(grafo, nodo);
   }
   conectar_nodos(grafo);
+  guardar_items_originales(grafo);
   fclose(archivo);
 }
 
@@ -517,7 +607,7 @@ void iniciar_partida(Grafo *grafo)
           break;
         case 4:
           printf("Reiniciando partida...\n");
-          reiniciar_jugador(jugador);
+          reiniciar_jugador(jugador, grafo);
           break; 
         case 5:
           printf("Saliendo del juego.\n");
@@ -532,7 +622,7 @@ void iniciar_partida(Grafo *grafo)
       }
       if (jugador->tiempo <= 0)
       {
-        mostrar_derrota(jugador);
+        mostrar_derrota(jugador, grafo);
         break;
       }
       if (opcion == 4){
@@ -550,7 +640,7 @@ void iniciar_partida(Grafo *grafo)
       scanf("%d", &opcion_final);
       
       if (opcion_final == 1) {
-        reiniciar_jugador(jugador);
+        reiniciar_jugador(jugador, grafo);
         continue; // Continuar el bucle principal para nueva partida
       } else {
         printf("Gracias por jugar. ¡Hasta la próxima!\n");
@@ -624,6 +714,7 @@ int main() {
   Grafo *grafo = malloc(sizeof(Grafo));
   grafo->nodos = NULL;
   grafo->total_nodos = 0;
+  grafo->items_originales = NULL;
   inicio_juego(grafo);
 
   return 0;

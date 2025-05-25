@@ -342,6 +342,10 @@ void descartar_items(Player* jugador) {
   }
 }
 
+// restaurar_items_originales:
+// Restaura los items originales de cada nodo en el grafo, eliminando los items actuales de los nodos
+// y volviendo a agregar los items originales guardados previamente.
+// Recorre la lista de nodos y para cada nodo, limpia su lista de items actuales y agrega los items originales.
 void restaurar_items_originales(Grafo* grafo) {
   // Limpiar items actuales de todos los nodos
   Nodo* nodo_actual = grafo->nodos;
@@ -565,6 +569,9 @@ void mostrar_estado_actual(Nodo* nodo_actual, Player* jugador) {
   }
 }
 
+// mostrar_estado_multijugador:
+// Muestra el estado actual del juego multijugador, incluyendo el escenario actual, los items disponibles,
+// el estado del jugador actual (tiempo, inventario, peso total, puntaje total) y las acciones disponibles.
 void mostrar_estado_multijugador(JuegoMultijugador* juego, Nodo* nodo_actual) {
   Player* jugador_actual = (juego->jugador_actual == 0) ? juego->jugador1 : juego->jugador2;
   int numero_jugador = juego->jugador_actual + 1;
@@ -648,7 +655,9 @@ void mostrar_resultado_multijugador(JuegoMultijugador* juego) {
   }
 }
 
-// Función para reiniciar el juego multijugador
+// reiniciar_multijugador:
+// Reinicia el estado del juego multijugador, limpiando los items recogidos de ambos jugadores,
+// reseteando el tiempo, peso total y puntaje total de ambos jugadores.
 void reiniciar_multijugador(JuegoMultijugador* juego, Grafo* grafo) {
   // Reiniciar jugador 1
   if (juego->jugador1->items != NULL) {
@@ -791,6 +800,10 @@ void iniciar_partida(Grafo *grafo)
   free(jugador);
 }
 
+// iniciar_partida_multijugador:
+// Inicia una partida en modo multijugador colaborativo.
+// Permite a dos jugadores jugar por turnos, recogiendo y descartando items, moviéndose por el laberinto,
+// y alcanzando el escenario final. Muestra el estado de ambos jugadores y permite reiniciar la partida o salir.
 void iniciar_partida_multijugador(Grafo *grafo) {
   if (grafo->nodos == NULL) {
     printf("No hay nodos cargados. Cargue un laberinto primero.\n");

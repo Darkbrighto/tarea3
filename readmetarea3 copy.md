@@ -57,7 +57,10 @@ Este sistema puede ejecutarse fácilmente utilizando **Visual Studio Code** junt
 
 * Si intentas cargar el juego sin leer el CSV, no hay problemas, pero, sin activar el modo debug, no podrás ver el
 mensaje de error correspondiente, por ende (falta de feedback al jugador)
-* Bajo ciertas condiciónes desconocidas, puede el programa quedarse estancado en el inicio.
+* No hay un estado de victoria como tal, llegar al final no puedes moverte y salir hará que pierdas.
+* Si descartas items en el multijugador, pese a no ser una accion en caso de no tener items, cuenta como un turno
+* (PELIGRO) Escribir ^]]A hará que el programa se caiga completamente
+* No hay limpieza clara de la pantalla al iniciar partida.
 
 ### A mejorar:
 
@@ -90,53 +93,88 @@ El archivo `graphquest.csv` debe contener, como mínimo, las siguientes columnas
 **Paso 1: Cargar nivel desde el archivo CSV**
 
 ```
-Opción seleccionada: 1) Cargar nivel
+Opción seleccionada: 1) Cargar csv
 nivel cargado exitosamente desde graphquest.csv
 ```
 
-**Paso 2: Buscar por artista**
+**Paso 2: Iniciar Partida, Multijugador y Solitario**
 
 ```
-Opción seleccionada: 2) Buscar canciones por artista
-Ingrese el nombre del artista: Queen
-- Bohemian Rhapsody
-- Don't Stop Me Now
-- Another One Bites The Dust
+Opción seleccionada: 3(Solo) o 4(Multijugador)
+Debería mostrarse algo así a continuación, en multijugador también debería
+tener los turnos, como 1/2:
+
+=== ESTADO ACTUAL ===
+Escenario: Entrada principal
+Descripción: Una puerta rechinante abre paso a esta mansion olvidada por los dioses y los conserjes. El aire huele a humedad y a misterios sin resolver.
+
+Ítems disponibles en este escenario:
+  No hay ítems disponibles.
+
+Tiempo restante: 10
+Inventario del Jugador:
+  No hay ítems en el inventario.
+Peso total: 0 kg
+Puntaje total: 0 pts
+Acciones disponibles:
+  2. Ir Abajo
+=== Opciones ===
+1. Recoger Items
+2. Descartar Items
+3. Avanzar en una direccion
+4. Reiniciar Partida
+5. Salir
+Seleccione una opción: 
 ```
 
-**Paso 3: Buscar por tempo**
+**Paso 3: Acciones a realizar**
 
 ```
-Opción seleccionada: 3) Buscar canciones por tempo
-Seleccione el rango de tempo (Lento, Moderado, Rápido): Rápido
-- Song A (135 BPM)
-- Song B (142 BPM)
-```
+Opción seleccionada: 1) Recoger Items
+-Si hay items en el mapa, podrás recogerlos al seleccionar su índice
+-Ítems disponibles en este escenario:
+  1. Cuchillo (Peso: 1 kg, Valor: 3 pts)
+  2. Pan (Peso: 1 kg, Valor: 2 pts)
+-Escribiendo 1 o 2 Hará que los eligas, solo podrás tomar 1.
 
-**Paso 4: Ver detalles de una canción**
+Opción seleccionada: 2) Descartar Items
+-Si tienes Items en el inventario
+-Inventario del Jugador:
+  1. Cuchillo (Peso: 1 kg, Valor: 3 pts)
+  2. Pan (Peso: 1 kg, Valor: 2 pts)
+-Escribiendo 1 o 2 descartará el item que eligas.
 
-```
-Opción seleccionada: 4) Mostrar información detallada
-Ingrese el nombre de la canción: Bohemian Rhapsody
-Artista: Queen
-Álbum: A Night at the Opera
-Género: Rock
-Tempo: 144 BPM
+Opción seleccionada: 3) Avanzar en una dirección
+-Se te mostrarán las posibles acciones.
+Acciones disponibles:
+  1. Ir Arriba
+  2. Ir Abajo
+  4. Ir Derecha
+-Escribiendo 1,2 o 3 avanzará hacia la siguente dirección, esto solo si es posible(es posible si se muestra).
+-Avanzar costará en medida de los items que tengas en el inventario
+
+Opción seleccionada: 4) Reiniciar Partida
+-Eliminará tu inventario, tu tiempo y volverás al inicio de la partida
+
+Opción seleccionada: 5) Salir
+-Para salir completamente ingresa esta opción luego escribe 5 y enter.
+
+-En multijugador existe la opción de pasar de turno(6) lo que hará que juege el siguente jugador.
 ```
 
 ## Contribuciones (solo para tareas grupales)
 
 ### Nombre del integrante BRUNO PERÉZ:
 
-* Implementación de la carga y búsqueda de canciones por artista, género y tempo
-* Implementación de la eliminación de canciónes y creación de listas de reproducción
-* Correción de errores y reducir tiempos de carga
+* Implementación de la carga CSV
+* Implementación del movimiento en el grafo
+* Implementación de la eliminación de items en grafo y jugador
+* Correción de errores y añadir modo multijugador
 * **Auto-evaluación**: 3 (Aporte excelente)
 
 ### Nombre del integrante HUGO GALLARDO:
 
 * Comentarios en la aplicación y explicar el uso de cada función.
 * Creación del readme y del repositorio de github.
-* Implementación en función de leer (elegir cuanto)
-* Get tempo range y incluir treemap
+* Búsqueda de errores
 * **Auto-evaluación**: 3 (Aporte excelente)
